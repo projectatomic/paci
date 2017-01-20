@@ -1,19 +1,18 @@
 kind: "BuildConfig"
 apiVersion: "v1"
 metadata:
-  name: "homu-test-build" 
+  name: "homu"
+  labels:
+    app: homu
 spec:
   runPolicy: "Serial" 
   triggers: 
-    - type: "GitHub"
-      github:
-        secret: "b58082a16b117b48a4d5bb3925b9c7b557806170"
     - type: "ImageChange"
   source: 
     type: "Git"
     git:
       uri: "https://github.com/cgwalters/projectatomic-ci-infra"
-    contextDir: homu/test
+    contextDir: homu
   strategy: 
     type: "Docker"
     dockerStrategy:
@@ -21,4 +20,4 @@ spec:
   output: 
     to:
       kind: "ImageStreamTag"
-      name: "homu-test:latest"
+      name: "homu:latest"

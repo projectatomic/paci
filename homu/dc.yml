@@ -1,23 +1,23 @@
 apiVersion: v1
 kind: DeploymentConfig
 metadata:
-  name: homu-test
+  name: homu
   labels:
-    app: homu-test
+    app: homu
 spec:
   replicas: 1
   selector:
-    app: homu-test
-    deploymentconfig: homu-test
+    app: homu
+    deploymentconfig: homu
   template:
     metadata:
       labels:
-        app: homu-test
-        deploymentconfig: homu-test
+        app: homu
+        deploymentconfig: homu
     spec:
       containers:
-        - image: homu-test
-          name: homu-test
+        - image: homu
+          name: homu
           ports:
             - containerPort: 8080
               name: homu
@@ -36,7 +36,7 @@ spec:
       volumes:
         - name: cfg
           secret:
-            secretName: homu-cfg-test
+            secretName: homu-cfg
         - name: sshcfg
           configMap:
             name: homu-ssh-config
@@ -46,10 +46,10 @@ spec:
     imageChangeParams:
       automatic: true
       containerNames:
-        - homu-test
+        - homu
       from:
         kind: ImageStreamTag
-        name: homu-test:latest
+        name: homu:latest
     type: ImageChange  
   strategy:
     type: Rolling       

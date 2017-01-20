@@ -5,26 +5,26 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    name: homu-test
+    name: homu
     labels:
-      app: homu-test 
+      app: homu 
   spec:
     ports:
     - port: 8080
       targetPort: 8080
     selector:
-      app: homu-test
-      deploymentconfig: homu-test
+      app: homu
+      deploymentconfig: homu
 
 - apiVersion: v1
   kind: Route
   metadata:
     labels:
-      app: homu-test
-    name: homu-test
+      app: homu
+    name: homu
   spec:
     to:
-      name: homu-test
+      name: homu
     port:
       targetPort: 8080
   tls:
