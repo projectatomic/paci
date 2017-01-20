@@ -27,5 +27,5 @@ items:
       name: homu
     port:
       targetPort: 8080
-  tls:
-    termination: edge
+    tls:
+      termination: edge
