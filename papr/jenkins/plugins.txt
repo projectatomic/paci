@@ -1,0 +1,4 @@
+# This file is read by
+# https://github.com/openshift/jenkins/blob/8e58d88/2/contrib/jenkins/install-plugins.sh
+# TODO: freeze all plugins
+ghprb:1.39.0
