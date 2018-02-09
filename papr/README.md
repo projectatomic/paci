@@ -52,3 +52,23 @@ Note that modifications to Jenkins configurations fed to the S2I builder will
 probably require that you delete and recreate the PVC so that old configurations
 don't override new ones (I find it easier to just `oc delete project papr` and
 recreate it; the builder image is cached in the `openshift` namespace).
+
+# Using webhooks locally
+
+If you're comfortable using a closed-source service and app, Ultrahook is
+[a popular way](https://blog.openshift.com/using-github-hooks-with-your-local-openshift-environment/)
+to get webhooks working in your local OpenShift instance rather than exposing it
+by poking holes in your firewall.
+
+To get started, get an API key from
+[the website](http://www.ultrahook.com/register), then `gem install ultrahook`,
+then you can run e.g.:
+
+```
+$ ultrahook github https://jenkins-papr.127.0.0.1.nip.io/ghprbhook/
+```
+
+This will relay all hooks sent to `github.$namespace.ultrahook.com` to GHPRB.
+You then simply need to use that same URL in the GitHub repo of your choosing.
+Remember to use the same shared secret as was generated/specified when you ran
+`new-app`.
