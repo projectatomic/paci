@@ -52,6 +52,8 @@ objects:
         kind: ImageStreamTag
         name: papr-jenkins:latest
         namespace: ${NAMESPACE}
+    successfulBuildsHistoryLimit: 2
+    failedBuildsHistoryLimit: 2
 - apiVersion: v1
   kind: Route
   metadata:
@@ -236,7 +238,7 @@ parameters:
 - description: Maximum amount of memory the container can use.
   displayName: Memory Limit
   name: MEMORY_LIMIT
-  value: 512Mi
+  value: 2Gi # https://github.com/openshift/jenkins/issues/501
 - description: Volume space available for data, e.g. 512Mi, 2Gi.
   displayName: Volume Capacity
   name: VOLUME_CAPACITY
