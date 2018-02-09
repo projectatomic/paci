@@ -76,6 +76,12 @@ objects:
       requests:
         storage: ${VOLUME_CAPACITY}
 - apiVersion: v1
+  kind: Secret
+  metadata:
+    name: webhook-secret
+  stringData:
+    secret: ${GITHUB_WEBHOOK_SHARED_SECRET}
+- apiVersion: v1
   kind: DeploymentConfig
   metadata:
     annotations:
@@ -133,8 +139,11 @@ objects:
           volumeMounts:
           - name: ${JENKINS_SERVICE_NAME}-data
             mountPath: /var/lib/jenkins
-          - name: github-token
+          - name: github-token-mount
             mountPath: /etc/github-token
+            readOnly: true
+          - name: webhook-secret-mount
+            mountPath: /etc/webhook-secret
             readOnly: true
         dnsPolicy: ClusterFirst
         restartPolicy: Always
@@ -143,9 +152,12 @@ objects:
         - name: ${JENKINS_SERVICE_NAME}-data
           persistentVolumeClaim:
             claimName: ${JENKINS_SERVICE_NAME}
-        - name: github-token
+        - name: github-token-mount
           secret:
             secretName: ${GITHUB_TOKEN_SECRET}
+        - name: webhook-secret-mount
+          secret:
+            secretName: webhook-secret
     triggers:
     - imageChangeParams:
         automatic: true
@@ -246,7 +258,7 @@ parameters:
   required: true
 # This is similar to the ci-pipeline template. It allows developers to specify
 # their own repos when iterating.
-- description: Git source URI for Jenkins S2I
+- description: Git source URI for Jenkins S2I.
   name: REPO_URL
   value: https://github.com/projectatomic/projectatomic-ci-infra
 - description: Git branch/tag reference
@@ -258,4 +270,9 @@ parameters:
     secret is expected to define a key "token" containing the token.
   name: GITHUB_TOKEN_SECRET
   value: github-token
+  required: true
+- description: Shared webhook secret.
+  name: GITHUB_WEBHOOK_SHARED_SECRET
+  generate: expression
+  from: '[A-Z0-9]{16}'
   required: true

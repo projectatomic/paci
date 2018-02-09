@@ -38,4 +38,4 @@ Credentials new_github_creds = (Credentials) new StringCredentialsImpl(
 
 store = SystemCredentialsProvider.instance.store
 store.updateCredentials(Domain.global(), github_creds, new_github_creds)
-println("Successfully updated credential token!")
+println("Successfully updated GitHub token credentials!")

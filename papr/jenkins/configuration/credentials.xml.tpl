@@ -10,6 +10,7 @@
         <org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl plugin="plain-credentials@1.3">
           <scope>GLOBAL</scope>
           <description>GitHub token</description>
+          <id>9750c6a2-1f91-4ad5-bac3-f60fa9b6ca4b</id>
           <!-- this will be replaced at startup by init.groovy -->
           <secret>SOOPERSEKRIT</secret>
         </org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl>
