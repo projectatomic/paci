@@ -55,6 +55,38 @@ objects:
     successfulBuildsHistoryLimit: 2
     failedBuildsHistoryLimit: 2
 - apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: papr-slave
+    namespace: ${NAMESPACE}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: papr-slave
+  triggers:
+  - type: ImageChange
+    imageChange: {}
+  - type: ConfigChange
+  - type: GitHub
+    github:
+      secret: ${GITHUB_WEBHOOK_SHARED_SECRET}
+  spec:
+    source:
+      type: Git
+      git:
+        uri: ${REPO_URL}
+        ref: ${REPO_REF}
+      contextDir: papr/slave
+    strategy:
+      type: Docker
+    output:
+      to:
+        kind: ImageStreamTag
+        name: papr-slave:latest
+        namespace: ${NAMESPACE}
+    successfulBuildsHistoryLimit: 2
+    failedBuildsHistoryLimit: 2
+- apiVersion: v1
   kind: Route
   metadata:
     annotations:
@@ -221,6 +253,24 @@ objects:
       name: ${JENKINS_SERVICE_NAME}
     sessionAffinity: None
     type: ClusterIP
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: job-builder
+  triggers:
+  - type: GitHub
+    github:
+      secret: ${GITHUB_WEBHOOK_SHARED_SECRET}
+  - type: ConfigChange
+  spec:
+    source:
+      type: Git
+      git:
+        uri: ${REPO_URL}
+        ref: ${REPO_REF}
+    strategy:
+      jenkinsPipelineStrategy:
+        jenkinsfilePath: papr/jjb/Jenkinsfile
 parameters:
 - description: The name of the OpenShift Service exposed for the Jenkins container.
   displayName: Jenkins Service Name

@@ -15,7 +15,7 @@ StringCredentials findGitHubTokenCreds() {
         null,
         null)
     for (c in creds) {
-        if (c.description.equals("GitHub token"))
+        if (c.id.equals("github-token"))
             return c
     }
 }

@@ -21,7 +21,8 @@
     <org.jenkinsci.plugins.ghprb.GhprbGitHubAuth>
       <serverAPIUrl>https://api.github.com</serverAPIUrl>
       <description>PAPR Connection</description>
-      <credentialsId>9750c6a2-1f91-4ad5-bac3-f60fa9b6ca4b</credentialsId>
+      <credentialsId>github-token</credentialsId>
+      <id>7a64217f-077c-4fde-a9a3-fd0ae37d4e0a</id>
       <!-- this will be replaced at startup by init.groovy -->
       <secret>SOOPERSEKRIT</secret>
     </org.jenkinsci.plugins.ghprb.GhprbGitHubAuth>
