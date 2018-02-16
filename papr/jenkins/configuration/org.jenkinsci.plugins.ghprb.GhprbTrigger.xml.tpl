@@ -20,9 +20,11 @@
   <githubAuth>
     <org.jenkinsci.plugins.ghprb.GhprbGitHubAuth>
       <serverAPIUrl>https://api.github.com</serverAPIUrl>
-      <!-- NB: because we only define a single credential, we don't need to
-           hardcode/generate a <credentialsId> here -->
-      <description>Authenticated connection</description>
+      <description>PAPR Connection</description>
+      <credentialsId>github-token</credentialsId>
+      <id>7a64217f-077c-4fde-a9a3-fd0ae37d4e0a</id>
+      <!-- this will be replaced at startup by init.groovy -->
+      <secret>SOOPERSEKRIT</secret>
     </org.jenkinsci.plugins.ghprb.GhprbGitHubAuth>
   </githubAuth>
   <adminlist></adminlist>

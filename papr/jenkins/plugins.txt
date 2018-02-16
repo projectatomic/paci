@@ -2,3 +2,12 @@
 # https://github.com/openshift/jenkins/blob/8e58d88/2/contrib/jenkins/install-plugins.sh
 # TODO: freeze all plugins
 ghprb:1.39.0
+# https://github.com/kohsuke/github-api/issues/387
+github-api:1.90
+# some advisories reported through the Jenkins UI
+# https://jenkins.io/security/advisory/2018-01-22/
+workflow-durable-task-step:2.18
+# https://jenkins.io/security/advisory/2018-02-05/
+credentials-binding:1.15
+workflow-support:2.18
+junit:1.24

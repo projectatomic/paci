@@ -15,7 +15,7 @@ StringCredentials findGitHubTokenCreds() {
         null,
         null)
     for (c in creds) {
-        if (c.description.equals("GitHub token"))
+        if (c.id.equals("github-token"))
             return c
     }
 }
@@ -38,4 +38,4 @@ Credentials new_github_creds = (Credentials) new StringCredentialsImpl(
 
 store = SystemCredentialsProvider.instance.store
 store.updateCredentials(Domain.global(), github_creds, new_github_creds)
-println("Successfully updated credential token!")
+println("Successfully updated GitHub token credentials!")

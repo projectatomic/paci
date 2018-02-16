@@ -10,6 +10,14 @@
         <org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl plugin="plain-credentials@1.3">
           <scope>GLOBAL</scope>
           <description>GitHub token</description>
+          <id>github-token</id>
+          <!-- this will be replaced at startup by init.groovy -->
+          <secret>SOOPERSEKRIT</secret>
+        </org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl>
+        <org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl plugin="plain-credentials@1.3">
+          <scope>GLOBAL</scope>
+          <description>API token for JJB</description>
+          <id>jenkins-job-builder</id>
           <!-- this will be replaced at startup by init.groovy -->
           <secret>SOOPERSEKRIT</secret>
         </org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl>
