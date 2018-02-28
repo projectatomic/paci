@@ -1,4 +1,4 @@
 [jenkins]
 user=admin
 password=
-url=https://jenkins/
+url=http://jenkins/
