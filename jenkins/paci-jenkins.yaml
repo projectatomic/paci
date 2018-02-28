@@ -1,31 +1,31 @@
 apiVersion: v1
 kind: Template
 labels:
-  app: papr-jenkins
-  template: papr-jenkins-template
+  app: paci-jenkins
+  template: paci-jenkins-template
 metadata:
   annotations:
     description: |-
-      Jenkins service for PAPR. This template is heavily based on the built-in
+      Jenkins service for PACI. This template is heavily based on the built-in
       jenkins-persistent OpenShift template. It adds an S2I buildconfig to
-      create Jenkins images tailored for PAPR usage.
+      create Jenkins images tailored for PACI usage.
     iconClass: icon-jenkins
-    openshift.io/display-name: PAPR Jenkins
+    openshift.io/display-name: PACI Jenkins
     openshift.io/documentation-url: https://github.com/projectatomic/projectatomic-ci-infra
     openshift.io/support-url: https://github.com/projectatomic/projectatomic-ci-infra
     openshift.io/provider-display-name: Project Atomic CI
-    tags: papr,jenkins
-  name: papr-jenkins
+    tags: paci,jenkins
+  name: paci-jenkins
 objects:
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    name: papr-jenkins
+    name: paci-jenkins
     namespace: ${NAMESPACE}
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-    name: papr-jenkins
+    name: paci-jenkins
   triggers:
   - type: ImageChange
     imageChange: {}
@@ -38,7 +38,7 @@ objects:
       git:
         uri: ${REPO_URL}
         ref: ${REPO_REF}
-      contextDir: papr/jenkins/
+      contextDir: jenkins/bc/master
     strategy:
       type: Source
       sourceStrategy:
@@ -50,19 +50,19 @@ objects:
     output:
       to:
         kind: ImageStreamTag
-        name: papr-jenkins:latest
+        name: paci-jenkins:latest
         namespace: ${NAMESPACE}
     successfulBuildsHistoryLimit: 2
     failedBuildsHistoryLimit: 2
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    name: papr-slave
+    name: paci-slave
     namespace: ${NAMESPACE}
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-    name: papr-slave
+    name: paci-slave
   triggers:
   - type: ImageChange
     imageChange: {}
@@ -76,13 +76,13 @@ objects:
       git:
         uri: ${REPO_URL}
         ref: ${REPO_REF}
-      contextDir: papr/slave
+      contextDir: jenkins/bc/slave
     strategy:
       type: Docker
     output:
       to:
         kind: ImageStreamTag
-        name: papr-slave:latest
+        name: paci-slave:latest
         namespace: ${NAMESPACE}
     successfulBuildsHistoryLimit: 2
     failedBuildsHistoryLimit: 2
@@ -270,7 +270,7 @@ objects:
         ref: ${REPO_REF}
     strategy:
       jenkinsPipelineStrategy:
-        jenkinsfilePath: papr/jjb/Jenkinsfile
+        jenkinsfilePath: jenkins/jjb/Jenkinsfile
 parameters:
 - description: The name of the OpenShift Service exposed for the Jenkins container.
   displayName: Jenkins Service Name
@@ -285,7 +285,7 @@ parameters:
   displayName: Enable OAuth in Jenkins
   name: ENABLE_OAUTH
   value: "true"
-- description: Maximum amount of memory the container can use.
+- description: Maximum amount of memory the Jenkins container can use.
   displayName: Memory Limit
   name: MEMORY_LIMIT
   value: 2Gi # https://github.com/openshift/jenkins/issues/501
@@ -297,16 +297,16 @@ parameters:
 - description: Name of the ImageStreamTag to be used for the Jenkins image.
   displayName: Jenkins ImageStreamTag
   name: JENKINS_IMAGE_STREAM_TAG
-  value: papr-jenkins:latest
+  value: paci-jenkins:latest
 # Templates are not able to pick up the namespace we're currently in, so let's
-# allow users to specify a different one if they didn't name the project "papr"
-# https://github.com/openshift/origin/issues/13934
+# allow users to specify a different one if they didn't name the project
+# "projectatomic-ci" (https://github.com/openshift/origin/issues/13934).
 - description: >
     The OpenShift Namespace where the Jenkins ImageStream resides. This is
     usually the same namespace as the project.
   displayName: Jenkins ImageStream Namespace
   name: NAMESPACE
-  value: papr
+  value: projectatomic-ci
   required: true
 # This is similar to the ci-pipeline template. It allows developers to specify
 # their own repos when iterating.

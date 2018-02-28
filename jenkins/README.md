@@ -1,9 +1,9 @@
-# PAPR Jenkins
+# PACI Jenkins
 
-This directory defines the infrastructure for a PAPR pipeline.
+This directory defines the infrastructure for a Jenkins pipeline.
 
-The infrastructure is instantiated by the `papr-jenkins.yaml` OpenShift template
-which will create a Jenkins instance customized for PAPR. This is heavily based
+The infrastructure is instantiated by the `paci-jenkins.yaml` OpenShift template
+which will create a Jenkins instance customized for PACI. This is heavily based
 on the `jenkins-persistent` builtin OpenShift template, but with the following
 enhancements:
 
@@ -16,7 +16,7 @@ The `jenkins/` directory is used by the S2I
 [OpenShift Jenkins builder](https://github.com/openshift/jenkins/tree/8e58d88#installing-using-s2i-build)
 to create the customized Jenkins master image.
 
-The `slave/` directory is used by the `papr-slave` buildconfig to create an
+The `slave/` directory is used by the `paci-slave` buildconfig to create an
 image for our Jenkins slave agent. This is used with the
 [Kubernetes plugin](https://plugins.jenkins.io/kubernetes).
 
@@ -30,33 +30,34 @@ The `jjb/` directory contains job definitions. Jobs are created by the
 Assuming you already have a cluster set up and running (e.g. `oc cluster up`):
 
 ```
-$ oc new-project papr
+$ oc new-project projectatomic-ci
 $ echo "$GITHUB_TOKEN" > mytoken
 $ oc secrets new github-token token=mytoken
-$ oc new-app --file papr-jenkins.yaml
+$ oc new-app --file paci-jenkins.yaml
 ```
 
 If your project already exists (e.g. you are not a cluster admin) and it is not
-named `papr`, make sure to pass the `-p NAMESPACE=$project` argument to the
-`new-app` command above. (Though there may be spots that currently assume `papr`
-is the namespace name).
+named `projectatomic-ci`, make sure to pass the `-p NAMESPACE=$project` argument
+to the `new-app` command above. (Though note that the `job-builder` Jenkinsfile
+currently assume `projectatomic-ci` is the namespace name, so for now that would
+require manual editing if different).
 
-You can now start a build of the PAPR Jenkins image using:
+You can now start a build of the Jenkins image using:
 
 ```
-$ oc start-build papr-jenkins
+$ oc start-build paci-jenkins
 # to follow the build logs
-$ oc logs --follow bc/papr-slave
+$ oc logs --follow bc/paci-jenkins
 ```
 
 Once the image is built, it will be automatically deployed and available at:
 
-https://jenkins-papr.127.0.0.1.nip.io/
+https://jenkins-projectatomic-ci.127.0.0.1.nip.io/
 
 If you're working on your own fork, you can point OpenShift at it:
 
 ```
-$ oc new-app --file papr-jenkins.yaml \
+$ oc new-app --file paci-jenkins.yaml \
     -p REPO_URL=https://github.com/jlebon/projectatomic-ci-infra \
     -p REPO_REF=my-branch
 ```
@@ -71,7 +72,7 @@ $ oc delete pvc jenkins
 $ oc new-app ... # as above
 <errors about existing objects, but recreates pvc>
 # if modifications require a new Jenkins image
-$ oc start-build papr-jenkins
+$ oc start-build paci-jenkins
 # otherwise, to reuse the latest image built
 $ oc rollout latest dc/jenkins
 ```
@@ -82,9 +83,9 @@ The next step is to create the container image that will be used for all
 executions. To do this, simply do:
 
 ```
-$ oc start-build papr-slave
+$ oc start-build paci-slave
 # to follow the build logs
-$ oc logs --follow bc/papr-slave
+$ oc logs --follow bc/paci-slave
 ```
 
 Modifications to the slave's `Dockerfile` will naturally require rebuilds of the
@@ -96,12 +97,14 @@ Rather than baking in the initial jobs into the image, jobs are created using
 the `job-builder` buildconfig. To create the jobs, do:
 
 ```
-$ oc start-builder job-builder
+$ oc start-build job-builder
 ```
 
 Since this buildconfig uses the
 [pipeline strategy](https://docs.openshift.com/container-platform/3.6/architecture/core_concepts/builds_and_image_streams.html#pipeline-build),
-logs can be seen directly from Jenkins.
+logs can be seen directly from Jenkins at:
+
+https://jenkins-projectatomic-ci.127.0.0.1.nip.io/job/projectatomic-ci/job/projectatomic-ci-job-builder/
 
 ## Using webhooks locally
 
@@ -115,7 +118,7 @@ To get started, get an API key from
 then you can run e.g.:
 
 ```
-$ ultrahook github https://jenkins-papr.127.0.0.1.nip.io/ghprbhook/
+$ ultrahook github https://jenkins-projectatomic-ci.127.0.0.1.nip.io/ghprbhook/
 ```
 
 This will relay all hooks sent to `github.$namespace.ultrahook.com` to GHPRB.

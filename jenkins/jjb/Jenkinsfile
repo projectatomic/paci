@@ -1,17 +1,17 @@
 // XXX: extend openshift/jenkins S2I builder so we can easily bake custom cloud
 // configs in config.xml.tpl so we don't need to `podTemplate` each time
-podTemplate(label: 'papr-slave', cloud: 'openshift', containers: [
+podTemplate(label: 'paci-slave', cloud: 'openshift', containers: [
     // XXX: directly using the clusterIP is the only way I could get this to
     // work -- using 'docker-registry.default.svc.cluster.local' fails
-    containerTemplate(name: 'jnlp', image: '172.30.1.1:5000/papr/papr-slave',
+    containerTemplate(name: 'jnlp', image: '172.30.1.1:5000/projectatomic-ci/paci-slave',
                       args: '${computer.jnlpmac} ${computer.name}')
     ]) {
 
-    node('papr-slave') {
+    node('paci-slave') {
         checkout scm
         withCredentials([string(credentialsId: 'jenkins-job-builder',
                                 variable: 'PASSWD')]) {
-            sh 'jenkins-jobs --conf papr/jjb/config -p $PASSWD update papr/jjb'
+            sh 'jenkins-jobs --conf jenkins/jjb/config -p $PASSWD update jenkins/jjb'
         }
     }
 }
