@@ -26,12 +26,9 @@ objects:
   kind: BuildConfig
   metadata:
     name: paci-jenkins
-  triggers:
-  - type: ImageChange
-    imageChange: {}
-  - type: ConfigChange
-  # Notably missing here is a GitHub webhook; we don't want to restart Jenkins
-  # everytime we push to the PACI repo.
+  # Note no triggers: we don't want e.g. git pushes/config changes to restart
+  # Jenkins. Let's just require manual restarts here. XXX: Should investigate if
+  # there's an easy way to auto-redeploy during downtimes.
   spec:
     source:
       type: Git
