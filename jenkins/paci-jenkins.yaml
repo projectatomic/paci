@@ -57,12 +57,12 @@ objects:
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    name: paci-slave
+    name: paci-jenkins-slave
     namespace: ${NAMESPACE}
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-    name: paci-slave
+    name: paci-jenkins-slave
   triggers:
   - type: ImageChange
     imageChange: {}
@@ -82,7 +82,7 @@ objects:
     output:
       to:
         kind: ImageStreamTag
-        name: paci-slave:latest
+        name: paci-jenkins-slave:latest
         namespace: ${NAMESPACE}
     successfulBuildsHistoryLimit: 2
     failedBuildsHistoryLimit: 2
@@ -270,7 +270,7 @@ objects:
         ref: ${REPO_REF}
     strategy:
       jenkinsPipelineStrategy:
-        jenkinsfilePath: jenkins/jjb/Jenkinsfile
+        jenkinsfilePath: jenkins/jjb/job-builder.Jenkinsfile
 parameters:
 - description: The name of the OpenShift Service exposed for the Jenkins container.
   displayName: Jenkins Service Name

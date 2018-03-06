@@ -3,7 +3,7 @@
 podTemplate(label: 'paci-slave', cloud: 'openshift', containers: [
     // XXX: directly using the clusterIP is the only way I could get this to
     // work -- using 'docker-registry.default.svc.cluster.local' fails
-    containerTemplate(name: 'jnlp', image: '172.30.1.1:5000/projectatomic-ci/paci-slave',
+    containerTemplate(name: 'jnlp', image: '172.30.1.1:5000/projectatomic-ci/paci-jenkins-slave',
                       args: '${computer.jnlpmac} ${computer.name}')
     ]) {
 

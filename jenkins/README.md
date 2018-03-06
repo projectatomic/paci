@@ -16,7 +16,7 @@ The `jenkins/` directory is used by the S2I
 [OpenShift Jenkins builder](https://github.com/openshift/jenkins/tree/8e58d88#installing-using-s2i-build)
 to create the customized Jenkins master image.
 
-The `slave/` directory is used by the `paci-slave` buildconfig to create an
+The `slave/` directory is used by the `paci-jenkins-slave` buildconfig to create an
 image for our Jenkins slave agent. This is used with the
 [Kubernetes plugin](https://plugins.jenkins.io/kubernetes).
 
@@ -83,9 +83,9 @@ The next step is to create the container image that will be used for all
 executions. To do this, simply do:
 
 ```
-$ oc start-build paci-slave
+$ oc start-build paci-jenkins-slave
 # to follow the build logs
-$ oc logs --follow bc/paci-slave
+$ oc logs --follow bc/paci-jenkins-slave
 ```
 
 Modifications to the slave's `Dockerfile` will naturally require rebuilds of the
