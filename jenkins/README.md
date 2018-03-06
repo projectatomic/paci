@@ -118,10 +118,20 @@ To get started, get an API key from
 then you can run e.g.:
 
 ```
-$ ultrahook github https://jenkins-projectatomic-ci.127.0.0.1.nip.io/ghprbhook/
+# for branch pushes (event "Push")
+$ ultrahook github https://jenkins-projectatomic-ci.127.0.0.1.nip.io/github-webhook/
+# for PR (events "Issue comment", "Pull request")
+$ ultrahook ghprb https://jenkins-projectatomic-ci.127.0.0.1.nip.io/ghprbhook/
 ```
 
-This will relay all hooks sent to `github.$namespace.ultrahook.com` to GHPRB.
-You then simply need to use that same URL in the GitHub repo of your choosing.
-Remember to use the same shared secret as was generated/specified when you ran
-`new-app`.
+⚠️ The trailing `/` is required! ⚠️
+
+This will relay all hooks sent to `ghprb.$namespace.ultrahook.com` to GHPRB (and
+`github...` to the GitHub plugin). You then simply need to use that same URL in
+the webhook settings of GitHub repo of your choosing. Remember to use the same
+shared secret as was generated/specified when you ran `new-app` (this can also
+be obtained from the Web UI or from the CLI using
+`oc extract secret/webhook-secret --to=-`).
+
+If you would prefer not to set up webhooks, you'll need to add a `pollscm`
+trigger as well as set `github-hooks` in `papr.yaml` to `false`.
