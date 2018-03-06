@@ -1,0 +1,132 @@
+- job-template:
+    name: 'papr-trigger-{ghowner}-{ghrepo}'
+    description: |
+      This job is triggered on both branch push and PR events for the
+      {ghowner}/{ghrepo} GitHub repo. It then converts those events to
+      Kubernetes jobs. See https://github.com/projectatomic/paci.
+    concurrent: false
+    node: master
+    wrappers:
+      - timestamps
+      - ansicolor
+    # for manual triggering
+    parameters:
+      - string:
+          name: PAPR_GITHUB_BRANCH
+          description: >
+            Branch to test (incompatible with PAPR_GITHUB_PULL_ID).
+      - string:
+          name: PAPR_GITHUB_PULL_ID
+          description: >
+            Pull request ID to test (incompatible with PAPR_GITHUB_BRANCH).
+      - string:
+          name: PAPR_TESTSUITES
+          description: >
+            Pipe-separated list of contexts. only the testsuites which
+            set these contexts will be run. Leave blank to run all the
+            testsuites.
+    scm:
+      # NB: always place first to take the index 0 in GIT_ env vars
+      - git:
+          url: 'https://github.com/{ghowner}/{ghrepo}'
+          # we also fetch pull refs so GHPRB can do a checkout
+          refspec: >
+            +refs/heads/*:refs/remotes/origin/*
+            +refs/pull/*:refs/remotes/origin/pr/*
+          basedir: checkout
+          # we only want the SCM plugin to handle regular branches, PRs are
+          # handled by GHPRB (the default is '**', which is all refs)
+          branches: ['origin/*']
+          # we don't actually need the full history, so minimize bandwidth
+          # (but still do a checkout to check for .papr.yml)
+          do-not-fetch-tags: true
+          # https://issues.jenkins-ci.org/browse/JENKINS-44323
+          #shallow-clone: true
+          wipe-workspace: false
+    properties:
+      - github: # required by GHPRB
+          url: 'https://github.com/{ghowner}/{ghrepo}'
+    triggers:
+      - github # branch pushes
+      - github-pull-request:
+
+          github-hooks: true
+          auth-id: '7a64217f-077c-4fde-a9a3-fd0ae37d4e0a'
+
+          white-list: [ '{white-list}' ]
+          org-list: [ 'projectatomic openshift flatpak ostreedev' ]
+          allow-whitelist-orgs-as-admins: true
+
+          # This doesn't actually matter since we don't do any status updates
+          # from this job. EXCEPT if this trigger job itself failed somehow,
+          # which it should never.
+          status-context: 'GHPRB Gate Job'
+          failure-status: 'Internal error while triggering.'
+          error-status: 'Internal error while triggering.'
+
+          # We want no URLs nor updates except if something has gone wrong.
+          # https://github.com/jenkinsci/ghprb-plugin/pull/182
+          # All status updates are performed by the triggered pipeline
+          status-url: '--none--'
+          triggered-status: '--none--'
+          started-status: '--none--'
+          success-status: '--none--'
+
+          trigger-phrase: 'bot, retest this please'
+    builders:
+      - shell: |
+          #!/bin/bash
+          set -xeuo pipefail
+
+          # short-circuit the whole thing if there's no YAML file
+          if [ ! -f checkout/.papr.yml ] &&
+             [ ! -f checkout/.papr.yaml ] &&
+             [ ! -f checkout/.redhat-ci.yml ]; then
+              echo "INFO: no PAPR YAML file found"
+              exit 0
+          fi
+
+          # just manually clone/checkout rather than adding another SCM
+          # otherwise we'd have to filter events by repo
+          # XXX: this should be easier if we migrate this job to pipeline.
+          if [ ! -d paci ]; then
+            git clone -b {paci-branch} https://github.com/{paci-owner}/paci
+          else
+            pushd paci
+            git fetch origin {paci-branch}
+            git checkout FETCH_HEAD
+            popd
+          fi
+
+          # and now we call the actual script that will create the PAPR pod
+          trigger="paci/papr/papr-trigger.py --repo {ghowner}/{ghrepo}"
+
+          if [ -n "${{PAPR_TESTSUITES:-}}" ]; then
+            trigger="$trigger --suites $PAPR_TESTSUITES"
+          fi
+
+          if [ -n "${{PAPR_GITHUB_BRANCH:-}}" ]; then
+            $trigger --branch $PAPR_GITHUB_BRANCH
+          elif [ -n "${{PAPR_GITHUB_PULL_ID:-}}" ]; then
+            $trigger --pull $PAPR_GITHUB_PULL_ID
+          elif [ -n "${{ghprbActualCommit:-}}" ]; then
+            $trigger --pull $ghprbPullId --expected-sha1 $ghprbActualCommit
+          else
+            branch=${{GIT_BRANCH#origin/}}
+            $trigger --branch $branch --expected-sha1 $GIT_COMMIT
+          fi
+
+- job-group:
+    name: papr-jobs
+    jobs:
+        - 'papr-trigger-{ghowner}-{ghrepo}'
+
+- project:
+    name: papr-triggers
+    paci-owner: projectatomic
+    paci-branch: master
+    white-list: ""
+    jobs:
+      - papr-jobs:
+          ghowner: jlebon
+          ghrepo: papr-sandbox
