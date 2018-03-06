@@ -326,5 +326,5 @@ parameters:
 - description: Shared webhook secret.
   name: GITHUB_WEBHOOK_SHARED_SECRET
   generate: expression
-  from: '[A-Z0-9]{16}'
+  from: '[A-Z0-9]{32}'
   required: true
