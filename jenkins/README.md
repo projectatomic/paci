@@ -25,6 +25,13 @@ The `jjb/` directory contains job definitions. Jobs are created by the
 
 # Getting started
 
+The OCP cluster used must be at least v3.6. If running `oc cluster up` locally,
+it is highly recommended to exactly match the version of
+[CentOS CI](https://console.apps.ci.centos.org:8443/console/), which is
+currently v3.6.1. You can do this using the `--version=v3.6.1` switch. This will
+ensure that you don't accidentally use features that will not be supported in
+production.
+
 ## Setting up the Jenkins master
 
 Assuming you already have a cluster set up and running (e.g. `oc cluster up`):
