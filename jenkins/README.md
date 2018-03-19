@@ -46,8 +46,8 @@ $ oc new-app --file paci-jenkins.yaml
 If your project already exists (e.g. you are not a cluster admin) and it is not
 named `projectatomic-ci`, make sure to pass the `-p NAMESPACE=$project` argument
 to the `new-app` command above. (Though note that the `job-builder` Jenkinsfile
-currently assume `projectatomic-ci` is the namespace name, so for now that would
-require manual editing if different).
+and `papr-trigger.py` script currently assume `projectatomic-ci` is the
+namespace name, so for now those would require manual editing if different).
 
 You can now start a build of the Jenkins image using:
 
@@ -68,6 +68,9 @@ $ oc new-app --file paci-jenkins.yaml \
     -p REPO_URL=https://github.com/jlebon/projectatomic-ci-infra \
     -p REPO_REF=my-branch
 ```
+
+This will change the source repos which are used for all the buildconfigs except
+`papr`. Analogous `PAPR_REPO_URL` and `PAPR_REPO_REF` parameters exist for that.
 
 Note that modifications to Jenkins configurations fed to the S2I builder will
 probably require that you delete and recreate the PVC so that previous
@@ -91,8 +94,6 @@ executions. To do this, simply do:
 
 ```
 $ oc start-build paci-jenkins-slave
-# to follow the build logs
-$ oc logs --follow bc/paci-jenkins-slave
 ```
 
 Modifications to the slave's `Dockerfile` will naturally require rebuilds of the
@@ -142,3 +143,34 @@ be obtained from the Web UI or from the CLI using
 
 If you would prefer not to set up webhooks, you'll need to add a `pollscm`
 trigger as well as set `github-hooks` in `papr.yaml` to `false`.
+
+## Hacking on PAPR
+
+Note that hacking on the PAPR codebase *itself* doesn't require Jenkins, only a
+working OpenShift cluster. See the PAPR
+[instructions](https://github.com/projectatomic/papr/blob/ocp/docs/RUNNING.md)
+for more details on how to get started.
+
+To be able to trigger PAPR tests from GHPRB jobs in Jenkins, you simply need to
+build the PAPR image:
+
+```
+$ oc start-build papr
+```
+
+If you have your own development version of PAPR that you'd like the build to
+use, you can specify a custom repo at `new-app`-time like this:
+
+```
+$ oc new-app --file paci-jenkins.yaml \
+    -p PAPR_REPO_URL=https://github.com/jlebon/papr \
+    -p PAPR_REPO_REF=ocp
+```
+
+(And of course, you can use `oc edit` to change the existing `papr` buildconfig
+if it's already created.)
+
+When GitHub webhooks are received, the GHPRB jobs trigger PAPR tests using the
+`papr-trigger.py` script. Thus, if you're only looking to test PAPR running in a
+pod (without e.g. having to `bot, retest this please` each time), you can
+execute the `papr-trigger.py` script directly.

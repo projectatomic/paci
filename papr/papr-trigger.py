@@ -4,6 +4,10 @@
     This script is run by Jenkins papr-trigger-* jobs to convert GitHub events
     into a new PAPR pod. PAPR will then create a new collection of jobs for
     each testsuite to be tested.
+
+    This can just as easily be run directly when hacking on PAPR. E.g.:
+
+        ./papr-trigger.py --repo jlebon/papr-sandbox --branch tmp
 '''
 
 # Note we use Python 2 here because we run directly on the master to reduce
@@ -24,8 +28,8 @@ import subprocess
 def main():
 
     args = parse_args()
-    job = generate_papr_job(args)
-    create_papr_job(job)
+    pod = generate_papr_pod(args)
+    create_papr_pod(pod)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -43,91 +47,84 @@ def parse_args():
     return parser.parse_args()
 
 
-def generate_papr_job(args):
+def generate_papr_pod(args):
     repo_name = args.repo[args.repo.index('/')+1:]
     target_name = args.branch if args.branch else args.pull
     uuid_name = uuid.uuid4().hex[:6] # XXX: actually check for collision
-    job_name = "papr-%s-%s-%s" % (repo_name, target_name, uuid_name)
-    job = {
-        "apiVersion": "batch/v1",
-        "kind": "Job",
+    pod_name = "papr-%s-%s-%s" % (repo_name, target_name, uuid_name)
+    # XXX: Migrate to Jobs, which have nicer semantics. For now, we're stuck
+    # with kube v1.6, which knows jobs, but doesn't support "backoffLimit".
+    # https://github.com/kubernetes/kubernetes/issues/30243
+    pod = {
+        "apiVersion": "v1",
+        "kind": "Pod",
         "metadata": {
-            "name": job_name,
+            "name": pod_name,
             "labels": {
                 "app": "papr"
             }
         },
         "spec": {
-            "backoffLimit": 0,
-            "template": {
-                "spec": {
-                    "restartPolicy": "Never",
-                    "containers": [
+            "restartPolicy": "Never", # not a long-running svc, see XXX above
+            "serviceAccountName": "papr",
+            "containers": [
+                {
+                    "name": "papr",
+                    "image": "172.30.1.1:5000/projectatomic-ci/papr",
+                    "imagePullPolicy": "Always",
+                    "args": ["--debug", "--repo", args.repo],
+                    # XXX: pvc for git checkout caches
+                    # XXX: mount site.yaml configmap
+                    "volumeMounts": [
                         {
-                            "name": "papr",
-                            # XXX: consider building this in PACI
-                            "image": "docker.io/projectatomic/papr:latest",
-                            # XXX: pvc for git checkout caches
-                            "workingDir": "/tmp",
-                            "env": [
-                                {
-                                    "name": "IN_OPENSHIFT",
-                                    "value": "1"
-                                },
-                                {
-                                    "name": "github_repo",
-                                    "value": args.repo
-                                },
-                                {
-                                    "name": "github_branch",
-                                    "value": args.branch
-                                },
-                                {
-                                    "name": "github_pull_id",
-                                    "value": args.pull
-                                },
-                                {
-                                    "name": "github_token",
-                                    "valueFrom": {
-                                        "secretKeyRef": {
-                                            "name": "github-token",
-                                            "key": "token"
-                                        }
-                                    }
-                                }
-                            ]
+                            "name": "github-token-mount",
+                            "mountPath": "/etc/github-token",
+                            "readOnly": True
                         }
                     ]
                 }
-            }
+            ],
+            "volumes": [
+                {
+                  "name": "github-token-mount",
+                  "secret": {
+                    # XXX: this is from the template; probably should just
+                      # require the secret to have that exact name
+                    "secretName": "github-token"
+                  }
+                }
+            ]
         }
     }
 
+    if args.branch:
+        pod["spec"]["containers"][0]["args"].extend([
+            "--branch", args.branch,
+        ])
+    else:
+        pod["spec"]["containers"][0]["args"].extend([
+            "--pull", args.pull,
+        ])
+
     if args.expected_sha1:
-        job["spec"]["template"]["spec"]["containers"][0]["env"].append(
-            {
-                "name": "github_commit",
-                "value": args.expected_sha1
-            }
+        pod["spec"]["containers"][0]["args"].extend(
+            ["--expected-sha1", args.expected_sha1]
         )
 
     if args.suites:
-        job["spec"]["template"]["spec"]["containers"][0]["env"].append(
-            {
-                "name": "github_contexts",
-                "value": args.suites
-            }
-        )
+        for suite in args.suites.split('|'):
+            pod["spec"]["containers"][0]["args"].extend(["--suite", suite])
 
-    return job
+    return pod
 
 
-def create_papr_job(job):
+def create_papr_pod(pod):
     # store definition in an O_TMPFILE for passing to oc
     with tempfile.TemporaryFile() as tmpf:
-        tmpf.write(json.dumps(job).encode('utf-8'))
+        tmpf.write(json.dumps(pod).encode('utf-8'))
         tmpf.seek(0)
         subprocess.check_output(["oc", "create", "-f", "-"], stdin=tmpf)
+    print(pod["metadata"]["name"])
 
 
 if __name__ == '__main__':

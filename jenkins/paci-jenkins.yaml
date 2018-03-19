@@ -84,6 +84,51 @@ objects:
     successfulBuildsHistoryLimit: 2
     failedBuildsHistoryLimit: 2
 - apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: papr
+    namespace: ${NAMESPACE}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: papr
+  triggers:
+  - type: ImageChange
+    imageChange: {}
+  - type: ConfigChange
+  - type: GitHub
+    github:
+      secret: ${GITHUB_WEBHOOK_SHARED_SECRET}
+  spec:
+    source:
+      type: Git
+      git:
+        # XXX: or migrate papr to paci/ or use as submodule?
+        uri: ${PAPR_REPO_URL}
+        ref: ${PAPR_REPO_REF}
+    strategy:
+      type: Docker
+    output:
+      to:
+        kind: ImageStreamTag
+        name: papr:latest
+        namespace: ${NAMESPACE}
+    successfulBuildsHistoryLimit: 2
+    failedBuildsHistoryLimit: 2
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: papr
+- apiVersion: v1
+  kind: RoleBinding
+  metadata:
+    name: papr-edit
+  roleRef:
+    name: edit
+  subjects:
+  - kind: ServiceAccount
+    name: papr
+- apiVersion: v1
   kind: Route
   metadata:
     annotations:
@@ -208,10 +253,9 @@ objects:
       serviceaccounts.openshift.io/oauth-redirectreference.jenkins: '{"kind":"OAuthRedirectReference","apiVersion":"v1","reference":{"kind":"Route","name":"${JENKINS_SERVICE_NAME}"}}'
     name: ${JENKINS_SERVICE_NAME}
 - apiVersion: v1
-  groupNames: null
   kind: RoleBinding
   metadata:
-    name: ${JENKINS_SERVICE_NAME}_edit
+    name: ${JENKINS_SERVICE_NAME}-edit
   roleRef:
     name: edit
   subjects:
@@ -305,13 +349,17 @@ parameters:
   name: NAMESPACE
   value: projectatomic-ci
   required: true
-# This is similar to the ci-pipeline template. It allows developers to specify
-# their own repos when iterating.
-- description: Git source URI for Jenkins S2I.
+- description: Git source URI for paci-jenkins, slave, and job-builder BCs
   name: REPO_URL
   value: https://github.com/projectatomic/projectatomic-ci-infra
 - description: Git branch/tag reference
   name: REPO_REF
+  value: master
+- description: Git source URI for papr BC
+  name: PAPR_REPO_URL
+  value: https://github.com/projectatomic/papr
+- description: Git branch/tag reference
+  name: PAPR_REPO_REF
   value: master
 - description: >
     GitHub token secret. This is *not* the token itself. It is the name of the
