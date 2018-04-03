@@ -22,6 +22,22 @@ objects:
   metadata:
     name: paci-jenkins
     namespace: ${NAMESPACE}
+# this is a version of the openshift/jenkins locked to stable openshift tags,
+# since we're using v3.6, which didn't do this versioning
+# see: https://github.com/openshift/jenkins/issues/528#issuecomment-378381468
+# Once we move away from v3.6, we can drop this and change the paci-jenkins bc
+# to use the openshift/jenkins:2 tag
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: jenkins
+    namespace: ${NAMESPACE}
+  spec:
+    tags:
+      - name: stable
+        from:
+          kind: DockerImage
+          name: openshift/jenkins-2-centos7:v3.9
 - apiVersion: v1
   kind: BuildConfig
   metadata:
@@ -41,8 +57,7 @@ objects:
       sourceStrategy:
         from:
           kind: ImageStreamTag
-          name: jenkins:latest
-          namespace: openshift
+          name: jenkins:stable
         forcePull: true
     output:
       to:
