@@ -19,10 +19,18 @@ from __future__ import print_function
 import os
 import sys
 import json
-import uuid
 import argparse
 import tempfile
 import subprocess
+
+
+# XXX: Need to figure out GC strategy for the pod we create here (the "child"
+# pods that PAPR creates are cleaned up by PAPR itself -- once we set up owner
+# references, then even aborted PAPR jobs should end up cleaning child pods
+# when we GC the parent). Maybe a Jenkins job to do this? Would want similar
+# semantics like successfulBuildsHistoryLimit and failedBuildsHistoryLimit.
+# Also note we'll still need this even once we move to Kubernetes Jobs, though
+# owner references are implicitly added for child pods.
 
 
 def main():
@@ -50,8 +58,6 @@ def parse_args():
 def generate_papr_pod(args):
     repo_name = args.repo[args.repo.index('/')+1:]
     target_name = args.branch if args.branch else args.pull
-    uuid_name = uuid.uuid4().hex[:6] # XXX: actually check for collision
-    pod_name = "papr-%s-%s-%s" % (repo_name, target_name, uuid_name)
     # XXX: Migrate to Jobs, which have nicer semantics. For now, we're stuck
     # with kube v1.6, which knows jobs, but doesn't support "backoffLimit".
     # https://github.com/kubernetes/kubernetes/issues/30243
@@ -59,7 +65,7 @@ def generate_papr_pod(args):
         "apiVersion": "v1",
         "kind": "Pod",
         "metadata": {
-            "name": pod_name,
+            "generateName": "papr-%s-%s-" % (repo_name, target_name),
             "labels": {
                 "app": "papr"
             }
@@ -73,26 +79,54 @@ def generate_papr_pod(args):
                     "image": "172.30.1.1:5000/projectatomic-ci/papr",
                     "imagePullPolicy": "Always",
                     "args": ["--debug", "runtest", "--conf",
-                             "/etc/papr.conf", "--repo", args.repo],
-                    # XXX: pvc for git checkout caches
-                    # XXX: mount site.yaml configmap
+                             "/etc/papr/config", "--repo", args.repo],
+                    # XXX: pvc for git checkout caches (but need to add locking)
+                    "env": [
+                        {
+                            "name": "GITHUB_TOKEN",
+                            "valueFrom": {
+                                "secretKeyRef": {
+                                    "name": "github-token",
+                                    "key": "token",
+                                    "optional": False
+                                }
+                            }
+                        },
+                        {
+                            "name": "AWS_ACCESS_KEY_ID",
+                            "valueFrom": {
+                                "secretKeyRef": {
+                                    "name": "aws-access-key",
+                                    "key": "id",
+                                    "optional": False
+                                }
+                            }
+                        },
+                        {
+                            "name": "AWS_SECRET_ACCESS_KEY",
+                            "valueFrom": {
+                                "secretKeyRef": {
+                                    "name": "aws-access-key",
+                                    "key": "secret",
+                                    "optional": False
+                                }
+                            }
+                        }
+                    ],
                     "volumeMounts": [
                         {
-                            "name": "github-token-mount",
-                            "mountPath": "/etc/github-token",
-                            "readOnly": True
+                            "name": "config-mount",
+                            "mountPath": "/etc/papr"
                         }
                     ]
                 }
             ],
             "volumes": [
                 {
-                  "name": "github-token-mount",
-                  "secret": {
-                    # XXX: this is from the template; probably should just
-                      # require the secret to have that exact name
-                    "secretName": "github-token"
-                  }
+                    "name": "config-mount",
+                    "configMap": {
+                        "name": "papr-config"
+                    }
                 }
             ]
         }
@@ -124,8 +158,7 @@ def create_papr_pod(pod):
     with tempfile.TemporaryFile() as tmpf:
         tmpf.write(json.dumps(pod).encode('utf-8'))
         tmpf.seek(0)
-        subprocess.check_output(["oc", "create", "-f", "-"], stdin=tmpf)
-    print(pod["metadata"]["name"])
+        subprocess.check_call(["oc", "create", "-f", "-"], stdin=tmpf)
 
 
 if __name__ == '__main__':

@@ -38,9 +38,17 @@ Assuming you already have a cluster set up and running (e.g. `oc cluster up`):
 
 ```
 $ oc new-project projectatomic-ci
-$ echo "$GITHUB_TOKEN" > mytoken
+$ echo -n "$GITHUB_TOKEN" > mytoken
 $ oc secrets new github-token token=mytoken
 $ oc new-app --file paci-jenkins.yaml
+```
+
+If you're also planning to test publishing results to AWS S3:
+
+```
+$ echo -n "$AWS_ACCESS_KEY_ID" > aws-key-id
+$ echo -n "$AWS_SECRET_ACCESS_KEY" > aws-key-secret
+$ oc secrets new aws-access-key id=aws-key-id secret=aws-key-secret
 ```
 
 If your project already exists (e.g. you are not a cluster admin) and it is not
@@ -150,6 +158,12 @@ Note that hacking on the PAPR codebase *itself* doesn't require Jenkins, only a
 working OpenShift cluster. See the PAPR
 [instructions](https://github.com/projectatomic/papr/blob/ocp/docs/RUNNING.md)
 for more details on how to get started.
+
+The `papr` service account needs to have a membership in an SCC with `RunAsAny`,
+so that it can run test containers as root, much like Docker. In the
+`oc cluster up` case, this can be done simply by adding the papr service account
+to the `anyuid` SCC. Otherwise, you'll need to ask a cluster administrator to do
+this for you.
 
 To be able to trigger PAPR tests from GHPRB jobs in Jenkins, you simply need to
 build the PAPR image:
