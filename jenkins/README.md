@@ -40,7 +40,6 @@ Assuming you already have a cluster set up and running (e.g. `oc cluster up`):
 $ oc new-project projectatomic-ci
 $ echo -n "$GITHUB_TOKEN" > mytoken
 $ oc secrets new github-token token=mytoken
-$ oc new-app --file paci-jenkins.yaml
 ```
 
 If you're also planning to test publishing results to AWS S3:
@@ -49,6 +48,12 @@ If you're also planning to test publishing results to AWS S3:
 $ echo -n "$AWS_ACCESS_KEY_ID" > aws-key-id
 $ echo -n "$AWS_SECRET_ACCESS_KEY" > aws-key-secret
 $ oc secrets new aws-access-key id=aws-key-id secret=aws-key-secret
+```
+
+Now we can create the actual pipeline:
+
+```
+$ oc new-app --file paci-jenkins.yaml
 ```
 
 If your project already exists (e.g. you are not a cluster admin) and it is not
