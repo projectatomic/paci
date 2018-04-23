@@ -130,3 +130,26 @@
       - papr-jobs:
           ghowner: jlebon
           ghrepo: papr-sandbox
+
+- job:
+    name: 'papr-pod-gc'
+    description: |
+      Temporary hack until we learn to bind test pods to parents (or
+      e.g. switch to Jobs). Though we'll need something like this to
+      clean up the parent jobs themselves. See
+      https://github.com/projectatomic/paci.
+    concurrent: false
+    node: master
+    wrappers:
+      - timestamps
+      - ansicolor
+    scm:
+      - git:
+          url: 'https://github.com/projectatomic/paci'
+          branches: ['origin/master']
+          wipe-workspace: false
+          basedir: paci
+    triggers:
+      - timed: "H/15 * * * *"
+    builders:
+      - shell: paci/papr/papr-gc.py
