@@ -56,7 +56,7 @@ def parse_args():
 
 
 def generate_papr_pod(args):
-    repo_name = args.repo[args.repo.index('/')+1:]
+    repo_owner, repo_name = args.repo.split('/')
     target_name = args.branch if args.branch else args.pull
     # XXX: Migrate to Jobs, which have nicer semantics. For now, we're stuck
     # with kube v1.6, which knows jobs, but doesn't support "backoffLimit".
@@ -67,7 +67,11 @@ def generate_papr_pod(args):
         "metadata": {
             "generateName": "papr-%s-%s-" % (repo_name, target_name),
             "labels": {
-                "app": "papr"
+                "app": "papr",
+                "papr.projectatomic.redhat.com/parent": "true",
+                "papr.projectatomic.redhat.com/github-repo-owner": repo_owner,
+                "papr.projectatomic.redhat.com/github-repo-name": repo_name,
+                "papr.projectatomic.redhat.com/github-target": target_name
             }
         },
         "spec": {
