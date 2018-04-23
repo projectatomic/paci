@@ -86,6 +86,9 @@ def generate_papr_pod(args):
                     "imagePullPolicy": "Always",
                     "args": ["--debug", "runtest", "--conf",
                              "/etc/papr/config", "--repo", args.repo],
+                    "securityContext": {
+                        "runAsUser": 0
+                    },
                     # XXX: pvc for git checkout caches (but need to add locking)
                     "env": [
                         {
