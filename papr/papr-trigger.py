@@ -76,7 +76,9 @@ def generate_papr_pod(args):
             "containers": [
                 {
                     "name": "papr",
-                    "image": "172.30.1.1:5000/projectatomic-ci/papr",
+                    # XXX: in `oc cluster up`, you need to directly use the
+                    # registry clusterIP, e.g. 172.30.1.1:5000
+                    "image": "docker-registry.default.svc:5000/projectatomic-ci/papr",
                     "imagePullPolicy": "Always",
                     "args": ["--debug", "runtest", "--conf",
                              "/etc/papr/config", "--repo", args.repo],
