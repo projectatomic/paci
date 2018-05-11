@@ -130,6 +130,9 @@
       - papr-jobs:
           ghowner: jlebon
           ghrepo: papr-sandbox
+      - papr-jobs:
+          ghowner: ostreedev
+          ghrepo: ostree
 
 - job:
     name: 'papr-pod-gc'
